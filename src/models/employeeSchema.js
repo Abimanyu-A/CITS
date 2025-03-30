@@ -3,11 +3,6 @@ import { v4 as uuidv4 } from "uuid";
 
 const employeeSchema = new Schema(
     {
-        empID: {
-            type: String,
-            unique: true,
-            default: uuidv4 // Generates a unique ID for each employee
-        },
 
         firstName: 
         {
