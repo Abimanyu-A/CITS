@@ -52,6 +52,10 @@ const employeeSchema = new Schema(
             type: String,
             required: [true, 'Please provide position']
         },
+        userID: {
+            type: Schema.Types.ObjectId,
+            ref: 'User'
+        },
         
         departmentId: 
         {
@@ -154,12 +158,6 @@ employeeSchema.virtual('attendance', {
     justOne: false
 });
 
-employeeSchema.virtual('sales',{
-    ref: 'sale',
-    localField: '_id',
-    foreignField: 'employeeId',
-    justOne: false
-});
 
 employeeSchema.index({ firstName: 1, lastName: 1 });
 employeeSchema.index({ departmentId: 1 });

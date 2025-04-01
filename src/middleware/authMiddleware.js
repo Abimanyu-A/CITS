@@ -10,8 +10,6 @@ const authenticate = async (req, res, next) => {
       ? authHeader.split(" ")[1]
       : req.cookies?.token; 
 
-    console.log(token);
-
     if (!token) {
       return res.status(401).json({ message: "Unauthorized: No token provided" });
     }

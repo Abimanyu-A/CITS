@@ -5,9 +5,8 @@ dotenv.config({ path: "../../.env"});
 
 let transporter = null;
 
-// Create transporter only once
+// Create transporter
 const initializeTransporter = () => {
-  console.log(process.env.SMTP_PASS)
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     console.error("SMTP credentials are missing. Please check your .env file.");
     return null;
@@ -15,7 +14,7 @@ const initializeTransporter = () => {
 
   try {
     transporter = nodemailer.createTransport({
-      service: "gmail", // If using a custom provider, configure host and port
+      service: "gmail", 
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -37,7 +36,7 @@ const initializeTransporter = () => {
   }
 };
 
-// Ensure transporter is initialized
+// transporter is initialized
 initializeTransporter();
 
 export const sendEmail = async (to, subject, text, html = null) => {

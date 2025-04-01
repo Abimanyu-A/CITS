@@ -1,36 +1,7 @@
-import  crypto  from "crypto";
 import { User } from "../models/User.js";
 import { Employee } from "../models/employeeSchema.js";
 import ErrorResponse from "../utils/errorResponse.js";
 
-
-export const register = async(req, res, next) => {
-    try{
-        const { username, email, password, role, employeeId, departmentId, teamId } = req.body;
-
-        const employee = await Employee.findById(employeeId);
-
-        if(!employee){
-            return next(
-                new ErrorResponse(`Employee not found with id of ${employeeId}`, 404)
-            );
-        }
-
-        const user = await User.create({
-            username,
-            email,
-            password,
-            role,
-            employeeId,
-            departmentId: departmentId || employee.departmentId,
-            teamId: teamId || employee.teamId
-        });
-
-        res.status(201).json({ success: true, data: user});
-    } catch(error) {
-        next(error);
-    }
-};
 
 // login 
 // route: post /api/v1/auth/login

@@ -66,8 +66,10 @@ connectDB()
 import authRouter from "./routes/authRoutes.js";
 import deptRouter from "./routes/deptRoutes.js";
 import empRouter from "./routes/empRoutes.js";
+import clientRouter from "./routes/clientRoutes.js";
 
 // routes declaration
 app.use("/api/auth",authRouter);
 app.use("/api/dept",deptRouter);
 app.use("/api/emp",empRouter);
+app.use("/api/client",clientRouter);

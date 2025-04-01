@@ -7,5 +7,4 @@ import { create_dept } from "../controllers/deptController.js";
 const deptRouter = express.Router()
 
 deptRouter.post("/create_dept",authenticate, authorize( RESOURCES.DEPARTMENT, ACTIONS.CREATE ), create_dept);
-
 export default deptRouter;
