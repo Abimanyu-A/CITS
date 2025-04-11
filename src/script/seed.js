@@ -11,7 +11,7 @@ dotenv.config();
 const connectDB = async () => {
     try {
         console.log(`Connecting to MongoDB: ${process.env.MONGODB_URI}/${process.env.DB_NAME}`);
-        await mongoose.connect("mongodb://localhost:27017/cits");
+        await mongoose.connect(`${process.env.MONGODB_URI}${process.env.DB_NAME}`);
         console.log("✅ MongoDB connected...");
     } catch (err) {
         console.error("❌ Error connecting to MongoDB:", err);
@@ -44,7 +44,7 @@ const seedCEO = async () => {
 
         // Create CEO user
         const ceoUser = new User({
-            username: "ceo_me",
+            username: "ceo@me",
             email: "ceo@me.com",
             password: "itsme@123",
             role: ROLES.CEO,

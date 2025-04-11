@@ -24,15 +24,18 @@ const performanceReviewSchema = new Schema(
       min: 1,
       max: 10,
     },
-    performanceRating: {
-      type: String,
-      required: true,
-      enum: ["Excellent", "Good", "Average", "Below Average", "Poor"],
+    ratings: {
+      productivity: { type: Number, min: 1, max: 5, required: true },
+      communication: { type: Number, min: 1, max: 5, required: true },
+      teamwork: { type: Number, min: 1, max: 5, required: true },
+      leadership: { type: Number, min: 1, max: 5, required: true },
+      punctuality: { type: Number, min: 1, max: 5, required: true },
     },
     feedback: {
       type: String,
       required: true,
-      maxlength: 1000, 
+      maxlength: 1000,
+      trim: true, 
     },
     reviewerId: {
       type: Schema.Types.ObjectId,

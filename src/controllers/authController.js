@@ -68,6 +68,7 @@ export const getMe = async (req, res, next) => {
         path: 'employee',
         select: 'firstName lastName position'
         });
+        console.log(user);
 
         res.status(200).json({
         success: true,

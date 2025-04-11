@@ -15,7 +15,13 @@ const performanceReviewArchiveSchema = new Schema(
     reviewDate: Date,
     reviewPeriod: String,
     overallScore: Number,
-    performanceRating: String,
+    ratings: {
+      productivity: Number,
+      communication: Number,
+      teamwork: Number,
+      leadership: Number,
+      punctuality: Number,
+    },
     feedback: String,
     reviewerId: {
       type: Schema.Types.ObjectId,

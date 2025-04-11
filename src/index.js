@@ -67,9 +67,11 @@ import authRouter from "./routes/authRoutes.js";
 import deptRouter from "./routes/deptRoutes.js";
 import empRouter from "./routes/empRoutes.js";
 import clientRouter from "./routes/clientRoutes.js";
+import teamRouter from "./routes/teamRoutes.js";
 
 // routes declaration
 app.use("/api/auth",authRouter);
 app.use("/api/dept",deptRouter);
 app.use("/api/emp",empRouter);
 app.use("/api/client",clientRouter);
+app.use("/api/team",teamRouter);

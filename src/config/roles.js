@@ -1,6 +1,8 @@
 const RESOURCES = {
     EMPLOYEE: 'employee',
     DEPARTMENT: 'department',
+    REVIEW: 'review',
+    TEAM: 'team'
 };
 
 const ACTIONS = {
@@ -38,13 +40,13 @@ const PERMISSIONS = {
 
     ],
     [ROLES.MANAGER]:[
-
+        { resource: RESOURCES.REVIEW, actions: [ACTIONS.CREATE, ACTIONS.DELETE, ACTIONS.READ, ACTIONS.UPDATE]}
     ],
     [ROLES.TEAM_LEAD]:[
-
+        
     ],
     [ROLES.EMPLOYEE]:[
-        { resource: RESOURCES.EMPLOYEE, actions: [ACTIONS.READ] },
+        { resource: RESOURCES.EMPLOYEE, actions: [ACTIONS.READ, ACTIONS.UPDATE] },
         { resource: RESOURCES.DEPARTMENT, actions: [ACTIONS.READ] }
     ]
 }
