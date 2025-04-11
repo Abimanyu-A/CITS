@@ -1,6 +1,7 @@
 import { User } from "../models/User.js";
 import { Employee } from "../models/employeeSchema.js";
 import ErrorResponse from "../utils/errorResponse.js";
+import mongoose from "mongoose";
 
 
 // login 
@@ -61,18 +62,30 @@ export const logout = async (req, res, next) => {
 
 // get current user
 export const getMe = async (req, res, next) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-        const user = await User.findById(req.user.id).select("-password").populate({
-        path: 'employee',
-        select: 'firstName lastName position'
-        });
-        console.log("me",user);
+        const user = await User.findById(req.user.id)
+            .select("-password")
+            .populate({
+                path: 'employee',
+                select: 'firstName lastName position',
+                options: { session }
+            });
+
+        console.log("me", user);
+
+        await session.commitTransaction();
+        session.endSession();
 
         res.status(200).json({
-        success: true,
-        data: user
+            success: true,
+            data: user
         });
     } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
         next(err);
     }
 };
