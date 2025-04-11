@@ -33,6 +33,8 @@ app.use(cookieParser());
 // Prevent XSS attacks
 app.use(xss());
 
+app.set("trust proxy", 1);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
