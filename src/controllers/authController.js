@@ -15,8 +15,6 @@ export const login = async (req, res, next) => {
         }
 
         const user = await User.findOne({ email }).select('+password');
-        console.log(user);
-
         if(!user) {
             return next(new ErrorResponse('Invalid credentials', 401));
         }
@@ -68,7 +66,7 @@ export const getMe = async (req, res, next) => {
         path: 'employee',
         select: 'firstName lastName position'
         });
-        console.log(user);
+        console.log("me",user);
 
         res.status(200).json({
         success: true,
