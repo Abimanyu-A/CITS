@@ -11,11 +11,13 @@ const authenticate = async (req, res, next) => {
       : req.cookies?.token; 
 
     if (!token) {
+      console.log("hehehe");
       return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
 
     // Verify token
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    console.log(decoded);
 
     // Find user and get only necessary fields
     const user = await User.findById(decoded.id).select("_id role");
