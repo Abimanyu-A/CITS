@@ -74,8 +74,6 @@ export const getMe = async (req, res, next) => {
                 options: { session }
             });
 
-        console.log("me", user);
-
         await session.commitTransaction();
         session.endSession();
 
