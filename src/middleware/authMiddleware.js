@@ -11,7 +11,6 @@ const authenticate = async (req, res, next) => {
       : req.cookies?.token; 
 
     if (!token) {
-      console.log(token);
       return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
 
@@ -25,7 +24,9 @@ const authenticate = async (req, res, next) => {
     }
 
     // Attach user details to request
+    console.log(user);
     req.user = { id: user._id.toString(), role: user.role };
+    console.log(req.user);
 
     return next();
   } catch (error) {
