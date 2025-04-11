@@ -64,7 +64,7 @@ export const logout = async (req, res, next) => {
 // get current user
 export const getMe = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user.id).populate({
+        const user = await User.findById(req.user.id).select("-password").populate({
         path: 'employee',
         select: 'firstName lastName position'
         });
