@@ -4,7 +4,8 @@ import { sendWelcomeEmail } from "../config/mailer.js";
 import { v4 as uuidv4 } from "uuid";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose, { startSession } from "mongoose";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadMultipleFiles, uploadOnCloudinary } from "../utils/cloudinary.js";
+import fs from "fs";
 
 // Generate a unique username
 const generateUsername = (lastname) => {
@@ -209,19 +210,35 @@ export const updateProfile = asyncHandler(async(req,res) => {
             return res.staus(400).json({ message: "Photo is required" });
         }
 
-        const photo = await uploadOnCloudinary(photoLocalPath);
+        const photo = await uploadOnCloudinary(photoLocalPath,existedUser.photo);
 
-        newDetails.photo = photo.secure_url;
+        newDetails.photo = photo;
 
-        const updatedEmployee = await Employee.updateOne(
-            { _id: id },
-            { $set: newDetails },
-        )
+        //delete the local photoo
+        fs.unlinkSync(photoLocalPath);
+
+        //Handling documents upload
+        const documentPaths = req.files?.documents?.map(doc => doc.path);
+        if(documentPaths?.length>0){
+            const uploadDocuments = await uploadMultipleFiles(documentPaths);
+            existedUser.documents.push(...uploadDocuments);
+
+            documentPaths.forEach(path => fs.unlinkSync(path));
+        }
+
+        Object.keys(newDetails).forEach((key) => {
+            existedUser[key] = newDetails[key];
+        });
+    
+        await existedUser.save({ session });
 
         await session.commitTransaction();
         session.endSession();
 
-        return res.status(200).json({ message: "Sucessfully updated"});
+        return res.status(200).json({ 
+            message: "Sucessfully updated",
+            employee: existedUser,
+        });
         
     } catch (error) {
         console.log(error);

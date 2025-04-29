@@ -16,6 +16,10 @@ empRouter.put("/update-profile/:id", authenticate, authorize(RESOURCES.EMPLOYEE,
     [{ 
         name: "photo", 
         maxCount: 1 
+    },
+    {
+        name: "documents",
+        maxCount: 5
     }]), 
     updateProfile
 );
