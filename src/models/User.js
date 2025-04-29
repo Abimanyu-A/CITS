@@ -65,6 +65,12 @@ const userSchema = new Schema(
             type: Boolean,
             default: true
         },
+        
+        firstLogin:
+        {
+            type: Boolean,
+            default: true,
+        },
           
         lastLogin: 
         {

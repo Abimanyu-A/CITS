@@ -3,6 +3,8 @@ import { User } from "../models/User.js";
 import { sendWelcomeEmail } from "../config/mailer.js";
 import { v4 as uuidv4 } from "uuid";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import mongoose, { startSession } from "mongoose";
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 // Generate a unique username
 const generateUsername = (lastname) => {
@@ -16,6 +18,8 @@ const generatePassword = () => {
 };
 
 export const registerEmployee = async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
         const { firstName, lastName, email, phone, position, salary, role } = req.body;
 
@@ -23,12 +27,11 @@ export const registerEmployee = async (req, res) => {
             return res.status(400).json({ message: "All required fields must be provided" });
         }
 
-        const existingEmployee = await Employee.findOne({ email });
+        const existingEmployee = await Employee.findOne({ email }).session(session);
         if (existingEmployee) {
             return res.status(400).json({ message: "Employee with this email already exists" });
         }
 
-        // Create new employee
         const newEmployee = new Employee({ 
             firstName, 
             lastName, 
@@ -37,7 +40,7 @@ export const registerEmployee = async (req, res) => {
             position, 
             salary 
         });
-        await newEmployee.save();
+        await newEmployee.save({ session });
 
         const generatedUsername = generateUsername(lastName);
         const generatedPassword = generatePassword();
@@ -49,12 +52,15 @@ export const registerEmployee = async (req, res) => {
             role: role || "employee",
             employeeId: newEmployee._id,
         });
-        await newUser.save();
+        await newUser.save({ session });
 
         newEmployee.userID = newUser._id;
-        await newEmployee.save();
+        await newEmployee.save({ session });
 
-        sendWelcomeEmail(email, generatedUsername, generatedPassword);
+        await sendWelcomeEmail(email, generatedUsername, generatedPassword);
+
+        await session.commitTransaction();
+        session.endSession();
 
         return res.status(201).json({
             message: "Employee registered successfully",
@@ -62,6 +68,8 @@ export const registerEmployee = async (req, res) => {
             user: newUser,
         });
     } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
         console.error("Error in registerEmployee:", error);
         return res.status(500).json({ 
             message: "Internal server error", 
@@ -70,94 +78,155 @@ export const registerEmployee = async (req, res) => {
     }
 };
 
-// update employee details
-export const updateProfile = asyncHandler(async (req,res) => {
-    const { id } = req.params;
-    const updateData = req.body;
-
-    const employee = await Employee.findById(id);
-    if(!employee)
-        return res.status(404).json({message: "Employee not found"});
-
-    Object.keys(updateData).forEach((key)=>{
-        employee[key] = updateData[key];
-    });
-
-    await employee.save();
-
-    return res.status(200).json({
-        message: "Employee updated successfully",
-        employee
-    });
-});
-
-// delete an employee
 export const deactivateEmployee = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    const employee = await Employee.findById(id);
-    if (!employee) {
-        return res.status(404).json({ message: "Employee not found" });
+    try {
+        const employee = await Employee.findById(id).session(session);
+        if (!employee) {
+            return res.status(404).json({ message: "Employee not found" });
+        }
+
+        if (employee.userID) {
+            await User.findByIdAndUpdate(employee.userID, { isActive: false }, { session });
+        }
+
+        await Employee.findByIdAndUpdate(id, { isActive: false }, { session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({ message: "Employee deactivated successfully" });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(500).json({ message: "Internal server error", error: error.message });
     }
-
-    if (employee.userID) {
-        await User.findByIdAndUpdate(employee.userID, { isActive: false });
-    }
-
-    await Employee.findByIdAndUpdate(id, { isActive: false });
-
-    return res.status(200).json({ message: "Employee deactivated successfully" });
-});
-
-
-export const updateDeptAndTeam = asyncHandler( async(req, res) => {
-    const { id } = req.params;
-    const { departmentId, teamId } = req.body;
-
-    const employee = await Employee.findById(id);
-
-    if (!employee) {
-        return res.status(404).json({ message: "Employee not found" });
-    }
-
-    if(departmentId){
-        employee.departmentId = departmentId;
-    }
-
-    if(teamId){
-        employee.teamId = teamId;
-    }
-
-    await employee.save();
-
-    return res.status(200).json({
-        message: "Employee updated successfully",
-        employee,
-    });
 });
 
 export const activateEmployee = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    const employee = await Employee.findById(id)
-        .populate({ path: "userID", select: "isActive" })
-        .exec();
+    try {
+        const employee = await Employee.findById(id)
+            .populate({ path: "userID", select: "isActive" })
+            .session(session);
 
-    if (!employee) {
+        if (!employee) {
+            return res.status(404).json({ message: "Employee not found" });
+        }
+
+        if (!employee.isActive) {
+            employee.isActive = true;
+        }
+
+        if (employee.userID && !employee.userID.isActive) {
+            await User.findByIdAndUpdate(employee.userID._id, { isActive: true }, { session, new: true });
+        }
+
+        await employee.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({ message: "Employee activated successfully" });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+});
+
+export const getAllEmployee = asyncHandler(async(req, res) => {
+    const employees = Employee.find()
+    .populate({
+        path: "departmentId",
+        select: "DeptName"
+    })
+    .populate({
+        path: "teamId",
+        select: "teamName"
+    })
+})
+
+export const updateDept = asyncHandler(async(req,res) => {
+    const { id } = req.params;
+    const { newDept } = req.body;
+    const employee = Employee.findByIdAndUpdate(id, { departmentId: newDept }, {
+        new: true,
+        runValidators: true
+    });
+
+    if(!employee){
         return res.status(404).json({ message: "Employee not found" });
     }
 
-    console.log("Employee before activation:", employee);
+    res.status(200).json({
+        success: true,
+        data: employee
+    });
 
-    if (!employee.isActive) {
-        employee.isActive = true;
+})
+
+export const updateTeam = asyncHandler(async(req,res) => {
+    const { id } = req.params;
+    const { newTeam } = req.body;
+    const employee = Employee.findByIdAndUpdate(id, { departmentId: newTeam }, {
+        new: true,
+        runValidators: true
+    });
+
+    if(!employee){
+        return res.status(404).json({ message: "Employee not found" });
     }
 
-    if (employee.userID && !employee.userID.isActive) {
-        await User.findByIdAndUpdate(employee.userID._id, { isActive: true }, { new: true });
-    }
+    res.status(200).json({
+        success: true,
+        data: employee
+    });
 
-    await employee.save();
-
-    return res.status(200).json({ message: "Employee activated successfully" });
 });
+
+export const updateProfile = asyncHandler(async(req,res) => {
+    const { id } = req.params;
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const newDetails = req.body;
+        const existedUser = await Employee.findById(id)
+
+        if(!existedUser){
+            return res.status(404).json({ message: "Employee not found"});
+        }
+
+        const photoLocalPath = req.files?.photo[0]?.path
+
+        if(!photoLocalPath){
+            return res.staus(400).json({ message: "Photo is required" });
+        }
+
+        const photo = await uploadOnCloudinary(photoLocalPath);
+
+        newDetails.photo = photo.secure_url;
+
+        const updatedEmployee = await Employee.updateOne(
+            { _id: id },
+            { $set: newDetails },
+        )
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({ message: "Sucessfully updated"});
+        
+    } catch (error) {
+        console.log(error);
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(500).send('Something went wrong');
+    }
+})

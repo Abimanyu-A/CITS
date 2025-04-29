@@ -4,8 +4,7 @@ import ErrorResponse from "../utils/errorResponse.js";
 import mongoose from "mongoose";
 
 
-// login 
-// route: post /api/v1/auth/login
+
 
 export const login = async (req, res, next) => {
     try {
@@ -42,7 +41,6 @@ export const login = async (req, res, next) => {
     
 }
 
-// logout
 
 export const logout = async (req, res, next) => {
     try {
