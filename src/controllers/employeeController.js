@@ -249,9 +249,9 @@ export const updateProfile = asyncHandler(async(req,res) => {
 });
 
 export const getCurrentEmployee = asyncHandler(async (req, res) => {
-    const { userId } = req.params;
+    const { id } = req.params;
 
-    const employee = await Employee.findOne({ userID: userId });
+    const employee = await Employee.findOne({ userID: id });
 
     if (!employee) {
         return res.status(404).json({ message: "Employee not found" });
