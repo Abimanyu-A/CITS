@@ -246,4 +246,19 @@ export const updateProfile = asyncHandler(async(req,res) => {
         session.endSession();
         return res.status(500).send('Something went wrong');
     }
-})
+});
+
+export const getCurrentEmployee = asyncHandler(async (req, res) => {
+    const { userId } = req.params;
+
+    const employee = await Employee.findOne({ userID: userId });
+
+    if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+    }
+
+    return res.status(200).json({
+        success: true,
+        data: employee
+    });
+});
