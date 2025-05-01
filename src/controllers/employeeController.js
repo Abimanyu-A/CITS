@@ -204,18 +204,21 @@ export const updateProfile = asyncHandler(async(req,res) => {
             return res.status(404).json({ message: "Employee not found"});
         }
 
-        const photoLocalPath = req.files?.photo[0]?.path
+        let photo = null;
+        if(req.files?.photo && req.files.photo.length > 0){
+            const photoLocalPath = req.files?.photo[0]?.path;
+            if(!photoLocalPath){
+                return res.status(400).json({ message: "Photo is required" });
+            }
 
-        if(!photoLocalPath){
-            return res.staus(400).json({ message: "Photo is required" });
+            photo = await uploadOnCloudinary(photoLocalPath,existedUser.photo);
+            
+            //delete the local photoo
+            fs.unlinkSync(photoLocalPath);
         }
+        
 
-        const photo = await uploadOnCloudinary(photoLocalPath,existedUser.photo);
-
-        newDetails.photo = photo;
-
-        //delete the local photoo
-        fs.unlinkSync(photoLocalPath);
+        
 
         //Handling documents upload
         const documentPaths = req.files?.documents?.map(doc => doc.path);
@@ -229,6 +232,10 @@ export const updateProfile = asyncHandler(async(req,res) => {
         Object.keys(newDetails).forEach((key) => {
             existedUser[key] = newDetails[key];
         });
+
+        if (photo) {
+            existedUser.photo = photo;
+        }
     
         await existedUser.save({ session });
 
