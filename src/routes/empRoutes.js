@@ -13,7 +13,6 @@ empRouter.put("/dept-details/:id", authenticate, authorize(RESOURCES.EMPLOYEE, A
 empRouter.put("/dept-teams/:id", authenticate, authorize(RESOURCES.EMPLOYEE, ACTIONS.UPDATE), updateTeam);
 empRouter.get("/get-employee/:id", authenticate, authorize(RESOURCES.EMPLOYEE, ACTIONS.READ), getCurrentEmployee);
 
-
 empRouter.put("/update-profile/:id", authenticate, authorize(RESOURCES.EMPLOYEE, ACTIONS.UPDATE), upload.fields(
     [{ 
         name: "photo", 
