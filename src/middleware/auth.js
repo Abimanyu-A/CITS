@@ -1,7 +1,7 @@
 import { getPermissions } from "../config/roles.js";
 
 // to authorize
-const authorize = (action, resource) => {
+const authorize = (resource, action) => {
   return (req, res, next) => {
     const userRole = req.user.role; // Assuming user role is stored in req.user
 
