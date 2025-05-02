@@ -204,6 +204,12 @@ export const updateProfile = asyncHandler(async(req,res) => {
             return res.status(404).json({ message: "Employee not found"});
         }
 
+        ['address', 'emergencyContact', 'skills'].forEach((field) => {
+            if (typeof newDetails[field] === 'string') {
+              newDetails[field] = JSON.parse(newDetails[field]);
+            }
+          });
+
         let photo = null;
         if(req.files?.photo && req.files.photo.length > 0){
             const photoLocalPath = req.files?.photo[0]?.path;
@@ -216,8 +222,6 @@ export const updateProfile = asyncHandler(async(req,res) => {
             //delete the local photoo
             fs.unlinkSync(photoLocalPath);
         }
-        
-
         
 
         //Handling documents upload
@@ -236,6 +240,20 @@ export const updateProfile = asyncHandler(async(req,res) => {
         if (photo) {
             existedUser.photo = photo;
         }
+
+        const user = await User.findByIdAndUpdate(
+            existedUser.userID,
+            {
+                $set: {
+                    firstLogin: false
+                },
+
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        )
     
         await existedUser.save({ session });
 
