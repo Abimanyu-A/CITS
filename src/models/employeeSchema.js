@@ -60,7 +60,7 @@ const employeeSchema = new Schema(
         departmentId: 
         {
             type: Schema.Types.ObjectId,
-            ref: 'Department',
+            ref: 'Dept',
         },
         
         managerId: 

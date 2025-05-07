@@ -1,5 +1,7 @@
 import { Employee } from "../models/employeeSchema.js";
 import { User } from "../models/User.js";
+import { Dept } from "../models/deptSchema.js";
+import { Team } from "../models/team.js";
 import { sendWelcomeEmail } from "../config/mailer.js";
 import { v4 as uuidv4 } from "uuid";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -143,7 +145,7 @@ export const activateEmployee = asyncHandler(async (req, res) => {
 });
 
 export const getAllEmployee = asyncHandler(async(req, res) => {
-    const employees = Employee.find()
+    const employees = await Employee.find()
     .populate({
         path: "departmentId",
         select: "DeptName"
@@ -151,6 +153,20 @@ export const getAllEmployee = asyncHandler(async(req, res) => {
     .populate({
         path: "teamId",
         select: "teamName"
+    })
+    .populate({
+        path: "userID",
+        select: "role"
+    })
+    .select("-createdAt -updatedAt -__v")
+
+    if(employees.length<=0){
+        return res.status(404).json({message: "There are no employees"});
+    }
+
+    return res.status(200).json({
+        success: true,
+        data: employees
     })
 })
 
@@ -287,3 +303,37 @@ export const getCurrentEmployee = asyncHandler(async (req, res) => {
         data: employee
     });
 });
+
+export const deleteEmployee = asyncHandler(async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const { id } = req.params;
+
+        const employee = await Employee.findByIdAndDelete(id).session(session);
+        if (!employee) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+
+        await User.findByIdAndUpdate(
+            employee.userID,
+            { isActive: false },
+            {
+                new: true,
+                runValidators: true,
+                session
+            }
+        );
+
+        await session.commitTransaction();
+        res.status(200).json({ message: 'Employee deleted and user deactivated', data: employee });
+
+    } catch (error) {
+        await session.abortTransaction();
+        res.status(500).json({ message: 'Internal Server Error', error: error.message });
+    } finally {
+        session.endSession();
+    }
+});
+

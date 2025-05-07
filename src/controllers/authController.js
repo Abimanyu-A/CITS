@@ -8,13 +8,13 @@ import mongoose from "mongoose";
 
 export const login = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
+        const { username, password } = req.body;
 
-        if (!email || !password) {
-            return next(new ErrorResponse('Please provide an email and password', 400));
+        if (!username || !password) {
+            return next(new ErrorResponse('Please provide an username and password', 400));
         }
 
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ username }).select('+password');
         if(!user) {
             return next(new ErrorResponse('Invalid credentials', 401));
         }

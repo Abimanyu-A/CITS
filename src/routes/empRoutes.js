@@ -2,7 +2,7 @@ import express from "express";
 import { authenticate } from "../middleware/authMiddleware.js";
 import { authorize } from "../middleware/auth.js";
 import { ACTIONS, RESOURCES } from "../config/roles.js";
-import { activateEmployee, deactivateEmployee, getCurrentEmployee, registerEmployee, updateDept, updateProfile, updateTeam } from "../controllers/employeeController.js";
+import { activateEmployee, deactivateEmployee, deleteEmployee, getAllEmployee, getCurrentEmployee, registerEmployee, updateDept, updateProfile, updateTeam } from "../controllers/employeeController.js";
 import { upload } from "../middleware/multerMiddleware.js";
 
 const empRouter = express.Router()
@@ -26,5 +26,7 @@ empRouter.put("/update-profile/:id", authenticate, authorize(RESOURCES.EMPLOYEE,
 );
 
 empRouter.put("/activate/:id", authenticate, authorize(RESOURCES.EMPLOYEE, ACTIONS.MANAGE), activateEmployee);
+empRouter.get("/all-employees", authenticate, authorize(RESOURCES.EMPLOYEE, ACTIONS.READ), getAllEmployee);
+empRouter.delete("/delete-employee/:id", authenticate, authorize(RESOURCES.EMPLOYEE, ACTIONS.DELETE), deleteEmployee)
 
 export default empRouter;

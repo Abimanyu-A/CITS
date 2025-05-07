@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { type } from "os";
 
 const teamSchema = new Schema(
     {
@@ -19,6 +20,11 @@ const teamSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Dept",
             required: [true, "Department is required"]
+        },
+        description: {
+            type: String,
+            trim: true,
+            maxlength: 200,
         }
     },
     {
