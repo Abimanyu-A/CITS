@@ -70,6 +70,7 @@ import deptRouter from "./routes/deptRoutes.js";
 import empRouter from "./routes/empRoutes.js";
 import clientRouter from "./routes/clientRoutes.js";
 import teamRouter from "./routes/teamRoutes.js";
+import reviewRouter from "./routes/reviewRoutes.js";
 
 // routes declaration
 app.use("/api/auth",authRouter);
@@ -77,3 +78,4 @@ app.use("/api/dept",deptRouter);
 app.use("/api/emp",empRouter);
 app.use("/api/client",clientRouter);
 app.use("/api/team",teamRouter);
+app.use("/api/review",reviewRouter);

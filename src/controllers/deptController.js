@@ -4,6 +4,7 @@ import { Dept } from "../models/deptSchema.js";
 import { Employee } from "../models/employeeSchema.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose from "mongoose";
+import { User } from "../models/User.js";
 
 export const create_dept = asyncHandler(async function (req, res, next) {
     const session = await mongoose.startSession();
@@ -40,7 +41,7 @@ export const create_dept = asyncHandler(async function (req, res, next) {
 
         await session.commitTransaction();
         session.endSession();
-
+        console.log(dept);
         res.status(201).json({ success: true, data: dept });
     } catch (error) {
         await session.abortTransaction();
@@ -65,7 +66,7 @@ export const updateDept = asyncHandler(async(req, res, next) => {
         id,
         updateData,
         { new: true, runValidators: true }
-    );
+    ).populate('DeptHeadID');
 
     if (!dept) {
         return next(new ErrorResponse("Department doesn't exist", 404));
@@ -78,25 +79,46 @@ export const updateDept = asyncHandler(async(req, res, next) => {
     });
 });
 
-export const deleteDept = asyncHandler(async(req, res, next) => {
-    const { id } = req.params;
+export const deleteDept = asyncHandler(async (req, res, next) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        return next(new ErrorResponse("Invalid department ID", 400));
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            await session.abortTransaction();
+            session.endSession();
+            return next(new ErrorResponse("Invalid department ID", 400));
+        }
+
+        const dept = await Dept.findByIdAndDelete(id, { session });
+
+        if (!dept) {
+            await session.abortTransaction();
+            session.endSession();
+            return next(new ErrorResponse("Department doesn't exist", 404));
+        }
+
+        const employee = Employee.findById(id).session(session);
+
+        const user = User.findByIdAndUpdate(employee.userID, { role: "employee" }, { new: true, runValidators: true, session})
+
+        await session.commitTransaction();
+        session.endSession();
+
+        res.status(200).json({
+            success: true,
+            message: "Department deleted successfully",
+            data: dept
+        });
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        next(error);
     }
-
-    const dept = await Dept.findByIdAndDelete(id);
-
-    if (!dept) {
-        return next(new ErrorResponse("Department doesn't exist", 404));
-    }
-
-    res.status(200).json({
-        success: true,
-        message: "Department deleted successfully",
-        data: dept
-    });
 });
+
 
 export const getAllDept = asyncHandler(async(req, res, next) => {
     const depts = await Dept.find().populate('DeptHeadID');

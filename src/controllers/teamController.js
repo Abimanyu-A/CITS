@@ -3,19 +3,20 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 
 export const createTeam = asyncHandler(async(req, res) => {
-    const { teamName, teamLead, dept } = req.body;
-    if(!teamName || !teamLead || !dept ){
+    const { name, teamLead, department, description } = req.body;
+    if(!name || !teamLead || !department || !description ){
         return res.status(400).json({ message: "All details must be provided" });
     }
 
-    const existingTeam = await Team.findOne({ teamName });
+    const existingTeam = await Team.findOne({ name });
     if(existingTeam){
         return res.status(400).json({ message: "Team name already exists"});
     }
     const team = new Team({
-        teamName,
+        teamName: name,
         teamLead,
-        dept
+        dept: department,
+        description
     });
 
     await team.save();

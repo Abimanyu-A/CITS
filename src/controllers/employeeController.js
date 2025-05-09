@@ -192,7 +192,7 @@ export const updateDept = asyncHandler(async(req,res) => {
 export const updateTeam = asyncHandler(async(req,res) => {
     const { id } = req.params;
     const { newTeam } = req.body;
-    const employee = Employee.findByIdAndUpdate(id, { departmentId: newTeam }, {
+    const employee = Employee.findByIdAndUpdate(id, { teamId: newTeam }, {
         new: true,
         runValidators: true
     });
