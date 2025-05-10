@@ -6,8 +6,9 @@ import mongoose from "mongoose";
 export const assignTeamToDept = asyncHandler(async (req, res) => {
     const { teamId } = req.params;
     const { deptId } = req.body;
+
+    console.log(deptId);
     console.log(teamId)
-    console.log(deptId)
 
     // Start a session for the transaction
     const session = await mongoose.startSession();
@@ -56,6 +57,7 @@ export const assignTeamToDept = asyncHandler(async (req, res) => {
         });
     } catch (error) {
         // If there is an error, abort the transaction
+        console.log(error)
         await session.abortTransaction();
         return res.status(400).json({
             success: false,
@@ -90,7 +92,7 @@ export const updateTeamMembers = asyncHandler(async (req, res) => {
         teamId,
         { members },
         { new: true, runValidators: true }
-    ).populate('department teamLead members');
+    ).populate('department teamLead');
 
     if (!team) {
         return res.status(404).json({ message: "Team not found" });
@@ -129,15 +131,20 @@ export const createTeam = asyncHandler(async(req, res) => {
     });
 });
 
-export const getAllTeams = asyncHandler(async(req,res) => {
-    const teams = await Team.find().populate('dept teamLead');
-    if (teams?.length<1) {
-        return res.status(404).json({message: "No teams created yet"})
+export const getAllTeams = asyncHandler(async (req, res) => {
+    const teams = await Team.find()
+        .populate([
+            { path: 'dept' },
+            { path: 'teamLead' },
+        ])
+
+    if (!teams || teams.length < 1) {
+        return res.status(404).json({ message: "No teams created yet" });
     }
-    return res.status(200).json({
-        data: teams
-    })
+
+    return res.status(200).json({ data: teams });
 });
+
 
 export const deleteTeam = asyncHandler(async(req, res) => {
     const { id } = req.params;

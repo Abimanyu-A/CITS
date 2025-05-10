@@ -1,5 +1,4 @@
 import { Schema, model } from "mongoose";
-import version from "mongoose-version";
 
 const deptSchema = new Schema(
     {
@@ -18,16 +17,13 @@ const deptSchema = new Schema(
         },
         HandlingTeams: [{
             type: Schema.Types.ObjectId,
-            ref: "Team"
+            ref: "Team",
+            default: [],
+            
         }]
     },
     { timestamps: true }
 );
 
-deptSchema.plugin(version, {
-  collection: 'DeptVersions', 
-  suppressVersionIncrement: false,
-  maxVersions: 10
-});
 
 export const Dept = model("Dept", deptSchema);

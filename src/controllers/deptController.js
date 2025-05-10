@@ -2,6 +2,7 @@ import ErrorResponse from "../utils/errorResponse.js";
 import { ROLES } from "../config/roles.js";
 import { Dept } from "../models/deptSchema.js";
 import { Employee } from "../models/employeeSchema.js";
+import { DeptVersion } from "../models/deptVersion.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import mongoose from "mongoose";
 import { User } from "../models/User.js";
@@ -24,11 +25,20 @@ export const create_dept = asyncHandler(async function (req, res, next) {
         
         await dept.save({ session });
 
+        // Save the initial version to DeptVersion collection
+        const deptVersion = new DeptVersion({
+            originalId: dept._id,
+            DeptName: dept.DeptName,
+            DeptHeadID: dept.DeptHeadID,
+            Budget: dept.Budget,
+        });
+        await deptVersion.save({ session });
+
         const employee = await Employee.findById(DeptHeadID).populate("userID").session(session);
         if (!employee) {
             throw new ErrorResponse("Employee not found", 404);
         }
-        
+
         const user = employee.userID;
         if (!user) {
             throw new ErrorResponse("User not found", 404);
@@ -47,11 +57,13 @@ export const create_dept = asyncHandler(async function (req, res, next) {
             message: "Department created with initial version"
         });
     } catch (error) {
+        console.log(error);
         await session.abortTransaction();
         session.endSession();
         next(error);
     }
 });
+
 
 export const updateDept = asyncHandler(async(req, res, next) => {
     const session = await mongoose.startSession();
@@ -81,6 +93,15 @@ export const updateDept = asyncHandler(async(req, res, next) => {
             return next(new ErrorResponse("Department doesn't exist", 404));
         }
 
+        // Save current version before update
+        const deptVersion = new DeptVersion({
+            originalId: currentDept._id,
+            DeptName: currentDept.DeptName,
+            DeptHeadID: currentDept.DeptHeadID,
+            Budget: currentDept.Budget,
+        });
+        await deptVersion.save({ session });
+
         // Handle role change if DeptHeadID is being updated
         if (updateData.DeptHeadID && !currentDept.DeptHeadID.equals(updateData.DeptHeadID)) {
             // Demote previous head to employee
@@ -108,7 +129,7 @@ export const updateDept = asyncHandler(async(req, res, next) => {
             }
         }
 
-        // Update department - mongoose-versioned will automatically create a new version
+        // Update department
         const updatedDept = await Dept.findByIdAndUpdate(
             id,
             updateData,
@@ -150,6 +171,15 @@ export const deleteDept = asyncHandler(async (req, res, next) => {
             return next(new ErrorResponse("Department doesn't exist", 404));
         }
 
+        // Save the version before deletion
+        const deptVersion = new DeptVersion({
+            originalId: dept._id,
+            DeptName: dept.DeptName,
+            DeptHeadID: dept.DeptHeadID,
+            Budget: dept.Budget,
+        });
+        await deptVersion.save({ session });
+
         // Demote department head before deletion
         if (dept.DeptHeadID) {
             const employee = await Employee.findById(dept.DeptHeadID)
@@ -180,8 +210,9 @@ export const deleteDept = asyncHandler(async (req, res, next) => {
     }
 });
 
+
 export const getAllDept = asyncHandler(async(req, res, next) => {
-    const depts = await Dept.find().populate('DeptHeadID');
+    const depts = await Dept.find().populate('DeptHeadID').populate("HandlingTeams");
     
     if (!depts || depts.length < 1) {
         return next(new ErrorResponse("No departments found", 404));
@@ -194,7 +225,6 @@ export const getAllDept = asyncHandler(async(req, res, next) => {
     });
 });
 
-// NEW: Get version history for a department
 export const getDeptVersions = asyncHandler(async(req, res, next) => {
     const { id } = req.params;
 
@@ -202,9 +232,9 @@ export const getDeptVersions = asyncHandler(async(req, res, next) => {
         return next(new ErrorResponse("Invalid department ID", 400));
     }
 
-    const versions = await mongoose.model('DeptVersions').find({ refId: id })
-        .sort('-createdAt')
-        .select('-__v -refId -_id');
+    const versions = await DeptVersion.find({ originalId: id })
+        .sort('-versionedAt')
+        .select('-__v -originalId');
 
     if (!versions || versions.length === 0) {
         return next(new ErrorResponse("No version history found", 404));
@@ -217,7 +247,7 @@ export const getDeptVersions = asyncHandler(async(req, res, next) => {
     });
 });
 
-// NEW: Revert to a specific version
+
 export const revertDeptVersion = asyncHandler(async(req, res, next) => {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -232,9 +262,7 @@ export const revertDeptVersion = asyncHandler(async(req, res, next) => {
         }
 
         // Find the version to revert to
-        const version = await mongoose.model('DeptVersions')
-            .findOne({ refId: id, _id: versionId })
-            .session(session);
+        const version = await DeptVersion.findOne({ originalId: id, _id: versionId }).session(session);
 
         if (!version) {
             await session.abortTransaction();
@@ -245,7 +273,11 @@ export const revertDeptVersion = asyncHandler(async(req, res, next) => {
         // Update the department with the version data
         const revertedDept = await Dept.findByIdAndUpdate(
             id,
-            version.data,
+            {
+                DeptName: version.DeptName,
+                DeptHeadID: version.DeptHeadID,
+                Budget: version.Budget
+            },
             { new: true, runValidators: true, session }
         ).populate('DeptHeadID');
 
@@ -263,3 +295,4 @@ export const revertDeptVersion = asyncHandler(async(req, res, next) => {
         next(error);
     }
 });
+``
