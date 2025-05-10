@@ -173,7 +173,7 @@ export const getAllEmployee = asyncHandler(async(req, res) => {
 export const updateDept = asyncHandler(async(req,res) => {
     const { id } = req.params;
     const { newDept } = req.body;
-    const employee = Employee.findByIdAndUpdate(id, { departmentId: newDept }, {
+    const employee = await Employee.findByIdAndUpdate(id, { departmentId: newDept }, {
         new: true,
         runValidators: true
     });
@@ -192,7 +192,7 @@ export const updateDept = asyncHandler(async(req,res) => {
 export const updateTeam = asyncHandler(async(req,res) => {
     const { id } = req.params;
     const { newTeam } = req.body;
-    const employee = Employee.findByIdAndUpdate(id, { teamId: newTeam }, {
+    const employee = await Employee.findByIdAndUpdate(id, { teamId: newTeam }, {
         new: true,
         runValidators: true
     });
