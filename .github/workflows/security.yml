@@ -1,0 +1,16 @@
+name: Security scan          # just the label shown in the Actions tab
+on: [pull_request]           # trigger: run this workflow every time a PR is opened/updated
+permissions:
+  contents: read
+  security-events: write     # required so the SARIF-upload step inside p4's action can write results
+jobs:
+  p4-scan:                   # arbitrary job name
+    runs-on: ubuntu-latest    # the VM this runs on
+    steps:
+      - uses: actions/checkout@v4      # step 1: pull the PR's code into that VM
+      - uses: Abimanyu-A/p4@main       # step 2: run YOUR action.yml against that checked-out code
+        with:
+          path: .
+          gemini-api-key: ${{ secrets.GEMINI_API_KEY }}   # pulled from the repo secret you added in step 2
+          fail-on: confirmed
+          min-severity: high
